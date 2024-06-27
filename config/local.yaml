@@ -1,0 +1,9 @@
+Enviroment: local
+StorageDriver: memory
+Server:
+  port: 8080
+  listen: 0.0.0.0
+Agent:
+  serverUrl: localhost:8080
+  pollInterval: 2
+  reportInterval: 10
