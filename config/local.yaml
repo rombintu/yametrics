@@ -7,3 +7,4 @@ Agent:
   serverUrl: localhost:8080
   pollInterval: 2
   reportInterval: 10
+  mode: debug
