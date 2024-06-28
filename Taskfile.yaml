@@ -1,11 +1,8 @@
 version: '3'
 tasks:
-  mtest-agent:
+  mtest-4:
     cmds:
-      - metricstest -test.v -test.run=^TestIteration1$ -agent-binary-path=cmd/agent/app
-  mtest-server:
-    cmds:
-      - metricstest -test.v -test.run=^TestIteration1$ -agent-binary-path=cmd/server/app
+      - ./metricstest -test.v -test.run=^TestIteration4$ -agent-binary-path=./cmd/agent/agent -binary-path=./cmd/server/server -server-port=8080 -source-path=./
   build-server:
     cmds:
       - go build -o cmd/server/server cmd/server/main.go
