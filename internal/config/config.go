@@ -2,6 +2,8 @@ package config
 
 import (
 	"flag"
+	"os"
+	"strconv"
 )
 
 type ServerConfig struct {
@@ -17,56 +19,6 @@ type AgentConfig struct {
 	Mode           string `yaml:"mode" env-default:"debug"`
 }
 
-// type Config struct {
-// 	Environment   string `yaml:"Environment" env-default:"local"`
-// 	StorageDriver string `yaml:"StorageDriver" env-default:"memory"`
-// 	Server        ServerConfig
-// 	Agent         AgentConfig
-// }
-
-// func MustLoad() Config {
-// path := fetchConfigPath()
-// if path == "" {
-// 	panic("config path is empty")
-// }
-
-// if _, err := os.Stat(path); os.IsNotExist(err) {
-// 	panic("config file does not exist: " + path)
-// }
-// var config Config
-// if err := cleanenv.ReadConfig(path, &config); err != nil {
-// 	panic("failed to read config: " + err.Error())
-// }
-// return config
-// 	config := tryLoadFromFlags()
-// 	return config
-// }
-
-// func fetchConfigPath() string {
-// 	var res string
-// 	flag.StringVar(&res, "config", "./config/local.yaml", "Path to config file")
-// 	flag.Parse()
-// 	if res == "" {
-// 		res = os.Getenv("CONFIG_PATH")
-// 	}
-// 	return res
-// }
-
-// func getenv(name string, defaultValue string) string {
-// 	value, err := os.LookupEnv(name)
-// 	if !err {
-// 		return ""
-// 	}
-// 	return value
-// }
-
-// func tryLoadFromEnv() Config {
-// 	var config Config
-// 	address := getenv("ADDRESS", "localhost:8080")
-
-// 	return config
-// }
-
 // Try load Server Config from flags
 func LoadServerConfigFromFlags() ServerConfig {
 	var config ServerConfig
@@ -78,6 +30,47 @@ func LoadServerConfigFromFlags() ServerConfig {
 	config.Address = *a
 	config.StorageDriver = *s
 	config.Environment = *e
+	return config
+}
+
+// Load Agent Config from Environment, if any var empty - load from flags or set default
+func LoadAgentConfig() AgentConfig {
+	var config AgentConfig
+	fromFlags := LoadAgentConfigFromFlags()
+
+	// Try load ADDRESS (ServerUrl)
+	address, ok := os.LookupEnv("ADDRESS")
+	if !ok {
+		config.ServerUrl = fromFlags.ServerUrl
+	} else {
+		config.ServerUrl = address
+	}
+
+	// Try load REPORT_INTERVAL
+	ri, ok := os.LookupEnv("REPORT_INTERVAL")
+	if !ok {
+		config.ReportInterval = fromFlags.ReportInterval
+	} else {
+		parseRI, err := strconv.ParseInt(ri, 10, 64)
+		if err != nil {
+			config.ReportInterval = fromFlags.ReportInterval
+		} else {
+			config.ReportInterval = parseRI
+		}
+	}
+
+	// Try load POLL_INTERVAL
+	pi, ok := os.LookupEnv("POLL_INTERVAL")
+	if !ok {
+		config.PollInterval = fromFlags.PollInterval
+	} else {
+		parsePI, err := strconv.ParseInt(pi, 10, 64)
+		if err != nil {
+			config.PollInterval = fromFlags.PollInterval
+		} else {
+			config.PollInterval = parsePI
+		}
+	}
 	return config
 }
 
