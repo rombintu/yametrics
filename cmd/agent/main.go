@@ -8,8 +8,8 @@ import (
 )
 
 func main() {
-	config := config.MustLoad()
-	a := agent.NewAgent(config.Agent)
+	config := config.LoadAgentConfigFromFlags()
+	a := agent.NewAgent(config)
 
 	go a.RunPoll()
 	go a.RunReport()

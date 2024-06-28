@@ -1,5 +1,11 @@
 package storage
 
+import (
+	"strconv"
+
+	"github.com/rombintu/yametrics/internal/metrics"
+)
+
 // var ErrNotFound = errors.New("not found")
 
 // type Tables struct {
@@ -70,4 +76,15 @@ func (m *memDriver) UpdateCounter(key string, value int64) {
 
 func (m *memDriver) GetStorageData() map[string]interface{} {
 	return m.data
+}
+
+func (m *memDriver) GetMetricByName(mtype, mname string) string {
+	switch mtype {
+	case metrics.CounterType:
+		return strconv.FormatInt(m.GetCounter(mname), 10)
+	case metrics.GaugeType:
+		return strconv.FormatFloat(m.GetGauge(mname), 'f', -1, 64)
+	default:
+		return ""
+	}
 }

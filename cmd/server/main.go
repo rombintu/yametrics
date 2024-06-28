@@ -12,9 +12,10 @@ import (
 
 func main() {
 
-	config := config.MustLoad()
+	config := config.LoadServerConfigFromFlags()
 
 	server := server.NewServer(config)
+
 	server.Log.Info("starting application", slog.String("env", config.Environment))
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGTERM, syscall.SIGINT)

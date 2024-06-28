@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"runtime"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/rombintu/yametrics/internal/config"
@@ -35,12 +36,20 @@ func NewAgent(config config.AgentConfig) *Agent {
 	data["counter"] = make(storage.CounterTable)
 	data["gauge"] = make(storage.GaugeTable)
 	return &Agent{
-		serverUrl:      config.ServerUrl,
+		serverUrl:      fixServerUrl(config.ServerUrl),
 		pollInterval:   config.PollInterval,
 		reportInterval: config.ReportInterval,
 		log:            lib.SetupLogger(config.Mode),
 		data:           data,
 		metrics:        make(map[string]string),
+	}
+}
+
+func fixServerUrl(url string) string {
+	if strings.HasPrefix(url, "http://") {
+		return url
+	} else {
+		return fmt.Sprintf("http://%s", url)
 	}
 }
 
@@ -74,6 +83,7 @@ func (a *Agent) sendDataOnServer(metricType, metricName string, value string) er
 }
 
 func (a *Agent) RunPoll() {
+	a.log.Info("start poll", slog.Any("pollInterval", a.pollInterval))
 	for {
 		a.loadMetrics()
 		time.Sleep(time.Duration(a.pollInterval) * time.Second)
@@ -81,6 +91,7 @@ func (a *Agent) RunPoll() {
 }
 
 func (a *Agent) RunReport() {
+	a.log.Info("start report", slog.Any("reportInterval", a.reportInterval))
 	for {
 		a.log.Debug("New report", slog.Int("pollCount", a.pollCount))
 		for metricName, value := range a.metrics {
