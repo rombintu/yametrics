@@ -1,12 +1,10 @@
 package server
 
 import (
-	"encoding/json"
-	"fmt"
 	"log/slog"
 	"net/http"
-	"strings"
 
+	"github.com/labstack/echo"
 	"github.com/rombintu/yametrics/internal/config"
 	"github.com/rombintu/yametrics/internal/storage"
 	"github.com/rombintu/yametrics/lib"
@@ -14,40 +12,43 @@ import (
 
 type Server struct {
 	storage *storage.Storage
-	router  *http.ServeMux
-	config  config.Config
+	router  *echo.Echo
+	config  config.ServerConfig
 	Log     *slog.Logger
 }
 
-func NewServer(config config.Config) *Server {
+func NewServer(config config.ServerConfig) *Server {
 	storage, err := storage.NewStorage(config.StorageDriver)
 	if err != nil {
 		panic(err)
 	}
 	return &Server{
-		config:  config,
-		router:  http.NewServeMux(),
+		config: config,
+		// Change router. Increment3
+		router:  echo.New(),
 		storage: storage,
 		Log:     lib.SetupLogger(config.Environment),
 	}
 }
 
 func (s *Server) Start() {
-	s.Log.Info("starting server")
+	s.Log.Info("starting server", slog.String("address", s.config.Address))
 	// Open storage
-	s.Log.Debug("opening storage", s.storage.Open())
-	s.Log.Info(fmt.Sprintf("server started on http://%s:%d", s.config.Server.Listen, s.config.Server.Port))
+	s.storage.Open()
+	s.Log.Debug("opening storage")
 
 	s.ConfigureRouter()
+
 	if err := http.ListenAndServe(
-		fmt.Sprintf(
-			"%s:%d", s.config.Server.Listen, s.config.Server.Port,
-		),
+		s.config.Address,
 		s.router,
 	); err != nil {
 		s.Log.Error(err.Error())
 		panic(err)
 	}
+	// s.router.Start(fmt.Sprintf(
+	// 	"%s:%d", s.config.Server.Listen, s.config.Server.Port,
+	// ))
 }
 
 func (s *Server) Shutdown() {
@@ -59,48 +60,14 @@ func (s *Server) Shutdown() {
 func (s *Server) ConfigureRouter() {
 	s.Log.Debug("configure router")
 	// s.router.HandleFunc("/", middlewareSetHeaders(rootHandler))
-
-	s.router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		path := r.URL.Path
-		if r.Method == http.MethodGet {
-			w.Header().Add("Content-Type", "application/json; charset=utf-8")
-			metrics, err := json.Marshal(s.storage.GetAllMetrics())
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-			w.Write(metrics)
-		} else if r.Method == http.MethodPost {
-			w.Header().Add("Content-Type", "text/plain; charset=utf-8")
-			if strings.HasPrefix(path, "/update/") {
-				parts := strings.Split(strings.TrimPrefix(path, "/update/"), "/")
-				if len(parts) == 3 {
-					metricType := parts[0]
-					metricName := parts[1]
-					metricValue := parts[2]
-
-					if err := s.storage.WriteMetric(
-						metricType, metricName, metricValue); err != nil {
-						http.Error(w, err.Error(), http.StatusInternalServerError)
-						return
-					}
-					//http.StatusOK
-					w.WriteHeader(http.StatusOK)
-				} else {
-					http.Error(w, "Invalid format", http.StatusNotFound)
-				}
-
-			} else {
-				http.Error(w, "Not found", http.StatusNotFound)
-			}
-		}
+	// s.router.GET("/", rootHandler)
+	s.router.GET("/", func(c echo.Context) error {
+		return c.JSON(http.StatusOK, s.storage.GetAllMetrics())
 	})
 
-	// // update counter metrics type
-	// s.router.HandleFunc("/update/counter", middlewareSetHeaders(func(w http.ResponseWriter, r *http.Request) {
-	// 	if r.Method != http.MethodPost {
-	// 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-	// 	}
-	// }))
+	s.router.GET("/value/:mtype/:mname", s.getMetricsByNames)
+
+	s.router.POST("/update/:mtype/:mname/:mvalue", s.updateMetrics)
+
 	s.Log.Debug("configure router is complete")
 }

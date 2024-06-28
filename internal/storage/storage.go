@@ -26,6 +26,7 @@ type StorageDriver interface {
 	UpdateGauge(key string, value float64)
 	UpdateCounter(key string, value int64)
 	GetStorageData() map[string]interface{}
+	GetMetricByName(mtype, mname string) string
 }
 
 type Storage struct {
