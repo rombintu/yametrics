@@ -1,6 +1,8 @@
 package main
 
 import (
+	"time"
+
 	"github.com/rombintu/yametrics/internal/agent"
 	"github.com/rombintu/yametrics/internal/config"
 )
@@ -8,5 +10,10 @@ import (
 func main() {
 	config := config.MustLoad()
 	a := agent.NewAgent(config.Agent)
-	a.Run()
+
+	go a.RunPoll()
+	go a.RunReport()
+	for {
+		time.Sleep(1 * time.Second)
+	}
 }

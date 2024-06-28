@@ -14,8 +14,8 @@ type ServerConfig struct {
 
 type AgentConfig struct {
 	ServerUrl      string `yaml:"serverUrl" env-default:"http://localhost:8080"`
-	PollInterval   int    `yaml:"pollInterval" env-default:"2"`
-	ReportInterval int    `yaml:"reportInterval" env-default:"10"`
+	PollInterval   int64  `yaml:"pollInterval" env-default:"2"`
+	ReportInterval int64  `yaml:"reportInterval" env-default:"10"`
 	Mode           string `yaml:"mode" env-default:"debug"`
 }
 
