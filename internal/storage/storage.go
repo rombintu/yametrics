@@ -21,8 +21,8 @@ const (
 type StorageDriver interface {
 	Open() error
 	Close() error
-	GetCounter(key string) int64
-	GetGauge(key string) float64
+	GetCounter(key string) (int64, error)
+	GetGauge(key string) (float64, error)
 	UpdateGauge(key string, value float64)
 	UpdateCounter(key string, value int64)
 	GetStorageData() map[string]interface{}

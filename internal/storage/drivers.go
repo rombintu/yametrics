@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"errors"
 	"strconv"
 
 	"github.com/rombintu/yametrics/internal/metrics"
@@ -40,20 +41,28 @@ func (m *memDriver) Close() error {
 	return nil
 }
 
-func (m *memDriver) GetCounter(key string) int64 {
+func (m *memDriver) GetCounter(key string) (int64, error) {
 	data, ok := m.data["counter"].(CounterTable)
 	if !ok {
-		return 0
+		return 0, errors.New("not found")
 	}
-	return data[key]
+	value, exist := data[key]
+	if !exist {
+		return 0, errors.New("not found")
+	}
+	return value, nil
 }
 
-func (m *memDriver) GetGauge(key string) float64 {
+func (m *memDriver) GetGauge(key string) (float64, error) {
 	data, ok := m.data["gauge"].(GaugeTable)
 	if !ok {
-		return 0
+		return 0, errors.New("not found")
 	}
-	return data[key]
+	value, exist := data[key]
+	if !exist {
+		return 0, errors.New("not found")
+	}
+	return value, nil
 }
 
 func (m *memDriver) UpdateGauge(key string, value float64) {
@@ -81,9 +90,17 @@ func (m *memDriver) GetStorageData() map[string]interface{} {
 func (m *memDriver) GetMetricByName(mtype, mname string) string {
 	switch mtype {
 	case metrics.CounterType:
-		return strconv.FormatInt(m.GetCounter(mname), 10)
+		value, err := m.GetCounter(mname)
+		if err != nil {
+			return ""
+		}
+		return strconv.FormatInt(value, 10)
 	case metrics.GaugeType:
-		return strconv.FormatFloat(m.GetGauge(mname), 'f', -1, 64)
+		value, err := m.GetGauge(mname)
+		if err != nil {
+			return ""
+		}
+		return strconv.FormatFloat(value, 'f', -1, 64)
 	default:
 		return ""
 	}
