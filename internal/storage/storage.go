@@ -10,8 +10,8 @@ import (
 var ErrInvalidDriver = errors.New("invalid storage driver. Available drivers: memory")
 
 const (
-	memDriverType = "memory"
-
+	memDriverType  = "memory"
+	mockDriverType = "mock"
 	// TODO: add more drivers
 	// fileDriverType  = "file"
 	// redisDriverType = "redis"
@@ -36,7 +36,7 @@ type Storage struct {
 func NewStorage(driverType string) (*Storage, error) {
 	var driver StorageDriver
 	switch driverType {
-	case memDriverType:
+	case memDriverType, mockDriverType:
 		driver = NewMemDriver()
 	default:
 		return nil, ErrInvalidDriver
